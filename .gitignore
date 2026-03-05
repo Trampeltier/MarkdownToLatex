@@ -1,3 +1,7 @@
 deep-research-report.md
 *.tex
 latex_tmp/
+*.md
+!README.md
+*.pyc
+src/md2latex/__pycache__

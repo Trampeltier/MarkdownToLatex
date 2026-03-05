@@ -62,6 +62,37 @@ CODE_UNICODE_TO_ASCII = {
     "Ẑ": "Zhat",
     "χ": "chi",
     "ℓ": "l",
+    "λ": "lambda",
+    "δ": "delta",
+    "∇": "nabla",
+    "∂": "d",
+    "θ": "theta",
+    "Δ": "Delta",
+    "⊤": "T",
+    "ᵀ": "^T",
+    "⁻": "-",
+    "⁺": "+",
+    "⁰": "0",
+    "¹": "1",
+    "²": "2",
+    "³": "3",
+    "⁴": "4",
+    "⁵": "5",
+    "⁶": "6",
+    "⁷": "7",
+    "⁸": "8",
+    "⁹": "9",
+    "₀": "0",
+    "₁": "1",
+    "₂": "2",
+    "₃": "3",
+    "₄": "4",
+    "₅": "5",
+    "₆": "6",
+    "₇": "7",
+    "₈": "8",
+    "₉": "9",
+    "×": "x",
     "→": "->",
     "←": "<-",
     "↔": "<->",
@@ -95,6 +126,43 @@ def _normalize_math_content(s: str) -> str:
     return s
 
 
+_CITATION_ARTIFACT_RE = re.compile(r"[\uE000-\uF8FF]cite[\uE000-\uF8FF].*?[\uE000-\uF8FF]", re.DOTALL)
+_CITATION_TURN_TOKEN_RE = re.compile(r"\??\bturn\d+(?:view\d+|search\d+)\b\??")
+_CITATION_QMARK_CLEANUP_RE = re.compile(r"[ \t]*\?{1,6}[ \t]*(?=\n\n)")
+_PRIVATE_USE_RE = re.compile(r"[\uE000-\uF8FF]+")
+
+
+def _strip_citation_artifacts(md_text: str) -> str:
+    md_text = _CITATION_ARTIFACT_RE.sub("", md_text)
+    md_text = _CITATION_TURN_TOKEN_RE.sub("", md_text)
+    md_text = _CITATION_QMARK_CLEANUP_RE.sub("", md_text)
+    md_text = _PRIVATE_USE_RE.sub("", md_text)
+    return md_text
+
+
+_PAREN_MATH_RE = re.compile(r"\\\((.+?)\\\)", re.DOTALL)
+_BRACKET_MATH_RE = re.compile(r"\\\[(.+?)\\\]", re.DOTALL)
+
+
+def _normalize_latex_math_delimiters(md_text: str) -> str:
+    # Convert LaTeX-style delimiters to the ones texmath_plugin reliably detects.
+    # Keep this conservative (non-greedy), and allow newlines for block math.
+
+    def paren_repl(m: re.Match[str]) -> str:
+        inner = m.group(1).strip()
+        inner = inner.replace("\\\\", "\\")
+        return f"${inner}$"
+
+    def bracket_repl(m: re.Match[str]) -> str:
+        inner = m.group(1).strip()
+        inner = inner.replace("\\\\", "\\")
+        return f"\n\n$$\n{inner}\n$$\n\n"
+
+    md_text = _PAREN_MATH_RE.sub(paren_repl, md_text)
+    md_text = _BRACKET_MATH_RE.sub(bracket_repl, md_text)
+    return md_text
+
+
 UNICODE_TO_LATEX = {
     "—": "---",
     "–": "--",
@@ -103,24 +171,52 @@ UNICODE_TO_LATEX = {
     "‐": "-",
     "‒": "-",
     "…": r"\ldots{}",
+    "±": r"$\pm$",
     "“": "``",
     "”": "''",
     "‘": "`",
     "’": "'",
+    "ï": r"\"{i}",
+    "é": r"\'{e}",
+    "ö": r"\"{o}",
+    "ü": r"\"{u}",
+    "á": r"\'{a}",
+    "ó": r"\'{o}",
+    "í": r"\'{i}",
+    "ú": r"\'{u}",
     "χ": r"$\chi$",
     "α": r"$\alpha$",
     "β": r"$\beta$",
     "γ": r"$\gamma$",
     "δ": r"$\delta$",
     "ε": r"$\epsilon$",
+    "ζ": r"$\zeta$",
+    "η": r"$\eta$",
+    "θ": r"$\theta$",
+    "Θ": r"$\Theta$",
+    "ι": r"$\iota$",
+    "κ": r"$\kappa$",
     "λ": r"$\lambda$",
+    "Λ": r"$\Lambda$",
     "μ": r"$\mu$",
+    "ν": r"$\nu$",
+    "ξ": r"$\xi$",
+    "Ξ": r"$\Xi$",
     "π": r"$\pi$",
+    "Π": r"$\Pi$",
     "ρ": r"$\rho$",
     "σ": r"$\sigma$",
+    "Σ": r"$\Sigma$",
     "τ": r"$\tau$",
+    "υ": r"$\upsilon$",
+    "Υ": r"$\Upsilon$",
     "φ": r"$\phi$",
+    "ϕ": r"$\varphi$",
+    "Φ": r"$\Phi$",
+    "ψ": r"$\psi$",
+    "Ψ": r"$\Psi$",
     "ω": r"$\omega$",
+    "Ω": r"$\Omega$",
     "ℓ": r"$\ell$",
     "·": r"$\cdot$",
     "→": r"$\rightarrow$",
@@ -407,7 +503,20 @@ def _render_table(table_node: Node, rules: Rules) -> str:
 
     def render_longtable(cols: list[int]) -> str:
         cols_sorted = cols
-        colspec = "l" * len(cols_sorted)
+        # Wrap cells by using p{..} columns (requires \usepackage{array}).
+        # We allocate width proportional to estimated max-chars per column,
+        # while capping each column to 0.5\linewidth to avoid a single column
+        # consuming the whole page.
+        widths = [max(1, col_max[i]) for i in cols_sorted]
+        total = sum(widths)
+        cap = 0.5
+        colspec_parts: list[str] = []
+        for w in widths:
+            frac = (w / total) if total else (1.0 / max(1, len(widths)))
+            if frac > cap:
+                frac = cap
+            colspec_parts.append(r">{\raggedright\arraybackslash}p{" + f"{frac:.3f}" + r"\linewidth}")
+        colspec = "".join(colspec_parts)
         font_open, font_close = choose_font(estimate_cols(cols_sorted))
 
         def project_rows(src: list[list[str]]) -> list[list[str]]:
@@ -487,6 +596,8 @@ def _build_tree(tokens: list[Token]) -> Node:
 def convert_markdown_to_latex(md_text: str, *, rules_path: Path, standalone: bool = False) -> str:
     rules = _load_rules(rules_path)
 
+    md_text = _strip_citation_artifacts(md_text)
+    md_text = _normalize_latex_math_delimiters(md_text)
     md_text = _normalize_inline_math_delimiters(md_text)
 
     md = (

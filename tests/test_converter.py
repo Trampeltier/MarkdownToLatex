@@ -58,6 +58,14 @@ def test_table_renders_longtable() -> None:
     assert "1" in tex and "2" in tex
 
 
+def test_table_uses_wrapping_p_columns() -> None:
+    md = "| a | b |\n|---|---|\n| long long long long long | x |\n"
+    tex = convert_markdown_to_latex(md, rules_path=rules_path(), standalone=False)
+    assert "\\begin{longtable}" in tex
+    assert "p{" in tex
+    assert "\\linewidth" in tex
+
+
 def test_wide_table_scales_down() -> None:
     long = "x" * 200
     md = f"| col1 | col2 |\n|---|---|\n| {long} | {long} |\n"
@@ -178,6 +186,21 @@ def test_math_block_renders_display_math() -> None:
     assert "\\[" in tex
     assert "\\]" in tex
     assert "\\chi" in tex
+
+
+def test_latex_style_math_delimiters_are_treated_as_math() -> None:
+    md = r"This has \(\lambda + \mu\) and a block: \[\nabla f\]"
+    tex = convert_markdown_to_latex(md, rules_path=rules_path(), standalone=False)
+    assert r"\\textbackslash{}" not in tex
+    assert r"$\lambda + \mu$" in tex
+    assert "\\[" in tex and "\\nabla f" in tex
+
+
+def test_unicode_derivative_and_greek_symbols_not_question_marks() -> None:
+    md = "Symbols: ∂ θ Θ Λ Ω ϕ\n"
+    tex = convert_markdown_to_latex(md, rules_path=rules_path(), standalone=False)
+    assert "?" not in tex
+    assert "$\\partial$" in tex
 
 
 def test_math_unescapes_markdown_asterisk() -> None:

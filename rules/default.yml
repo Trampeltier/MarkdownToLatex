@@ -11,6 +11,7 @@ preamble: |
   \usepackage{amssymb}
   \usepackage{textcomp}
   \usepackage{graphicx}
+  \usepackage{array}
   \usepackage{longtable}
   \usepackage{booktabs}
   \usepackage{ulem}

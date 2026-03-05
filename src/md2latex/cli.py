@@ -3,7 +3,13 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .converter import convert_markdown_to_latex, generate_main_tex
+try:
+    from .converter import convert_markdown_to_latex, generate_main_tex
+except ImportError:
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from md2latex.converter import convert_markdown_to_latex, generate_main_tex
 
 
 def _default_rules_path() -> Path:
