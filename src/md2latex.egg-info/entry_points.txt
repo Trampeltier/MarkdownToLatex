@@ -1,0 +1,2 @@
+[console_scripts]
+md2latex = md2latex.cli:main

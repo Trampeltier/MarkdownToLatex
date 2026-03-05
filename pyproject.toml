@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "md2latex"
+version = "0.1.0"
+description = "Markdown to LaTeX converter with rule-based mappings"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "markdown-it-py>=3.0.0",
+  "mdit-py-plugins>=0.4.0",
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[project.scripts]
+md2latex = "md2latex.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

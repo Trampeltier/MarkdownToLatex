@@ -1,0 +1,56 @@
+Metadata-Version: 2.4
+Name: md2latex
+Version: 0.1.0
+Summary: Markdown to LaTeX converter with rule-based mappings
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: markdown-it-py>=3.0.0
+Requires-Dist: mdit-py-plugins>=0.4.0
+Requires-Dist: PyYAML>=6.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0.0; extra == "dev"
+
+# md2latex
+
+A small rule-driven Markdown to LaTeX converter.
+
+## Install
+
+```bash
+python -m pip install -e .
+```
+
+## Usage
+
+```bash
+md2latex input.md -o output.tex
+```
+
+Use a custom rule file:
+
+```bash
+md2latex input.md -o output.tex --rules rules.yml
+```
+
+Standalone LaTeX document (adds preamble + `\\begin{document}` / `\\end{document}`):
+
+```bash
+md2latex input.md -o output.tex --standalone
+```
+
+## Rules file
+
+Rules are YAML mapping **markdown-it token types** to LaTeX templates.
+
+- For container tokens you typically set `open` and `close`.
+- For leaf tokens you typically set `template`.
+
+Templates can use placeholders:
+
+- `{content}` rendered children content
+- `{level}` heading level (1-6)
+- `{lang}` code fence language (if present)
+- `{href}` link destination
+- `{title}` link title (if present)
+
+See `rules/default.yml`.

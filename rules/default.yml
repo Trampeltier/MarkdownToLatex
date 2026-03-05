@@ -1,0 +1,122 @@
+# Default markdown-it token -> LaTeX mapping
+# Note: this targets CommonMark + common GFM-style constructs.
+
+preamble: |
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{lmodern}
+  \usepackage[margin=0.6in,landscape]{geometry}
+  \usepackage{hyperref}
+  \usepackage{amsmath}
+  \usepackage{amssymb}
+  \usepackage{textcomp}
+  \usepackage{graphicx}
+  \usepackage{longtable}
+  \usepackage{booktabs}
+  \usepackage{ulem}
+  \usepackage{enumitem}
+  \usepackage{listings}
+  \usepackage{xcolor}
+  
+  \setlength{\LTleft}{0pt}
+  \setlength{\LTright}{0pt}
+  
+  \lstset{
+    basicstyle=\ttfamily\small,
+    columns=fullflexible,
+    breaklines=true,
+    frame=single,
+  }
+
+documentclass: "article"
+
+# Token mapping
+# - open/close are used for *_open/*_close pairs
+# - template is used for leaf tokens
+# - skip: true removes the token entirely
+
+tokens:
+  paragraph_open:
+    open: ""
+  paragraph_close:
+    close: "\n\n"
+
+  heading_open:
+    template: "\\{section_cmd}{{content}}\n"
+  heading_close:
+    skip: true
+
+  bullet_list_open:
+    open: "\\begin{itemize}\n"
+  bullet_list_close:
+    close: "\\end{itemize}\n"
+
+  ordered_list_open:
+    open: "\\begin{enumerate}\n"
+  ordered_list_close:
+    close: "\\end{enumerate}\n"
+
+  list_item_open:
+    open: "\\item "
+  list_item_close:
+    close: "\n"
+
+  em_open:
+    open: "\\emph{"
+  em_close:
+    close: "}"
+
+  strong_open:
+    open: "\\textbf{"
+  strong_close:
+    close: "}"
+
+  s_open:
+    open: "\\sout{"
+  s_close:
+    close: "}"
+
+  code_inline:
+    template: "\\texttt{{content}}"
+
+  fence:
+    template: "\\begin{lstlisting}[language={lang}]\n{content}\n\\end{lstlisting}\n"
+
+  code_block:
+    template: "\\begin{verbatim}\n{content}\n\\end{verbatim}\n"
+
+  blockquote_open:
+    open: "\\begin{quote}\n"
+  blockquote_close:
+    close: "\\end{quote}\n"
+
+  hr:
+    template: "\\hrulefill\n"
+
+  hardbreak:
+    template: "\\\\\n"
+  softbreak:
+    template: "\n"
+
+  link_open:
+    open: "\\href{{{href}}}{"
+  link_close:
+    close: "}"
+
+  image:
+    template: "\\includegraphics{{{src}}}"
+
+  inline:
+    passthrough: true
+
+  text:
+    passthrough: true
+
+# Heading level mapping (1-6)
+heading_levels:
+  "1": section
+  "2": subsection
+  "3": subsubsection
+  "4": paragraph
+  "5": subparagraph
+  "6": subparagraph
