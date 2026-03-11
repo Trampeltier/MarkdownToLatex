@@ -20,6 +20,14 @@ def _default_rules_path() -> Path:
     return Path.cwd() / "rules" / "default.yml"
 
 
+def _default_landscape_rules_path() -> Path:
+    here = Path(__file__).resolve()
+    for parent in [here.parent, *here.parents]:
+        if (parent / "pyproject.toml").exists():
+            return parent / "rules" / "landscape.yml"
+    return Path.cwd() / "rules" / "landscape.yml"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="md2latex", description="Convert Markdown to LaTeX")
     parser.add_argument("input", type=Path, help="Input .md file")
@@ -27,8 +35,13 @@ def main() -> None:
     parser.add_argument(
         "--rules",
         type=Path,
-        default=_default_rules_path(),
+        default=None,
         help="Path to YAML rules file",
+    )
+    parser.add_argument(
+        "--landscape",
+        action="store_true",
+        help="Use the built-in A4 landscape rules (equivalent to --rules rules/landscape.yml)",
     )
     parser.add_argument(
         "--standalone",
@@ -43,17 +56,21 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    rules_path = args.rules
+    if rules_path is None:
+        rules_path = _default_landscape_rules_path() if args.landscape else _default_rules_path()
+
     if args.standalone and args.write_main:
         parser.error("--write-main cannot be used with --standalone")
 
     md_text = args.input.read_text(encoding="utf-8")
-    latex = convert_markdown_to_latex(md_text, rules_path=args.rules, standalone=args.standalone)
+    latex = convert_markdown_to_latex(md_text, rules_path=rules_path, standalone=args.standalone)
 
     out_path = args.output or args.input.with_suffix(".tex")
     out_path.write_text(latex, encoding="utf-8")
 
     if args.write_main:
-        main_tex = generate_main_tex(included_tex=out_path, rules_path=args.rules)
+        main_tex = generate_main_tex(included_tex=out_path, rules_path=rules_path)
         (out_path.parent / "main.tex").write_text(main_tex, encoding="utf-8")
 
 

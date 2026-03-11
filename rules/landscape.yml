@@ -1,11 +1,11 @@
-# Default markdown-it token -> LaTeX mapping
+# Default markdown-it token -> LaTeX mapping (landscape variant)
 # Note: this targets CommonMark + common GFM-style constructs.
 
 preamble: |
   \usepackage[T1]{fontenc}
   \usepackage[utf8]{inputenc}
   \usepackage{lmodern}
-  \usepackage[a4paper,margin=0.6in]{geometry}
+  \usepackage[a4paper,margin=0.6in,landscape]{geometry}
   \usepackage{hyperref}
   \usepackage{amsmath}
   \usepackage{amssymb}

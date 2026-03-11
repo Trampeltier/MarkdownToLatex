@@ -20,6 +20,21 @@ def test_heading_bold_italic_strike() -> None:
     assert "\\sout{" in tex
 
 
+def test_heading_ampersand_is_escaped_once_without_linebreak() -> None:
+    md = "### Conditions 1 & 2: test\n"
+    tex = convert_markdown_to_latex(md, rules_path=rules_path(), standalone=False)
+    assert "\\\\&" not in tex
+    assert "\\&" in tex
+
+
+def test_math_block_ignores_blank_lines_inside() -> None:
+    md = "$$\\na + b\\n\\n$$\n"
+    tex = convert_markdown_to_latex(md, rules_path=rules_path(), standalone=False)
+    assert "\\[" in tex
+    assert "a + b" in tex
+    assert "\\]" in tex
+
+
 def test_strong_closes() -> None:
     md = "**F**\n"
     tex = convert_markdown_to_latex(md, rules_path=rules_path(), standalone=False)
@@ -158,6 +173,20 @@ def test_unicode_arrow_and_warning_are_mapped() -> None:
     tex = convert_markdown_to_latex(md, rules_path=rules_path(), standalone=False)
     assert "$\\Rightarrow$" in tex
     assert "[WARN]" in tex
+
+
+def test_unicode_diamond_emoji_is_mapped() -> None:
+    md = "Bullet: 🔹\n"
+    tex = convert_markdown_to_latex(md, rules_path=rules_path(), standalone=False)
+    assert "$\\diamond$" in tex
+    assert "?" not in tex
+
+
+def test_hundred_points_emoji_is_mapped() -> None:
+    md = "Score: 💯\n"
+    tex = convert_markdown_to_latex(md, rules_path=rules_path(), standalone=False)
+    assert "100" in tex
+    assert "?" not in tex
 
 
 def test_circled_number_is_mapped() -> None:

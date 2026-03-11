@@ -14,15 +14,15 @@ from mdit_py_plugins.deflist import deflist_plugin
 
 
 LATEX_SPECIAL_CHARS = {
-    "\\": r"\\textbackslash{}",
-    "{": r"\\{",
-    "}": r"\\}",
-    "#": r"\\#",
-    "%": r"\\%",
-    "&": r"\\&",
-    "_": r"\\_",
-    "^": r"\\textasciicircum{}",
-    "~": r"\\textasciitilde{}",
+    "\\": r"\textbackslash{}",
+    "{": r"\{",
+    "}": r"\}",
+    "#": r"\#",
+    "%": r"\%",
+    "&": r"\&",
+    "_": r"\_",
+    "^": r"\textasciicircum{}",
+    "~": r"\textasciitilde{}",
 }
 
 
@@ -273,6 +273,10 @@ UNICODE_TO_LATEX = {
     "♦": r"$\diamondsuit$",
     "◆": r"$\diamond$",
     "◇": r"$\diamond$",
+    "🔹": r"$\diamond$",
+    "🔸": r"$\diamond$",
+    "🔷": r"$\diamond$",
+    "🔶": r"$\diamond$",
     "§": r"\S{}",
     "¶": r"\P{}",
     "†": r"\dagger{}",
@@ -282,6 +286,9 @@ UNICODE_TO_LATEX = {
     "©": r"\copyright{}",
     "№": "No.",
     "⚠": "[WARN]",
+    "✅": r"$\checkmark$",
+    "❌": r"$\times$",
+    "⃣": "",
     "❗": "!",
     "❓": "?",
     "ℹ": "[i]",
@@ -291,7 +298,8 @@ UNICODE_TO_LATEX = {
     "📌": "[pin]",
     "📎": "[paperclip]",
     "🔎": "[search]",
-    "🟢": "(green)",
+    "💯": "100",
+    "�": "(green)",
     "🟡": "(yellow)",
     "🔴": "(red)",
     "⚫": "(black)",
@@ -661,7 +669,11 @@ def _render_node(node: Node, rules: Rules) -> str:
         return f"${_normalize_math_content(tok.content)}$"
 
     if tok.type == "math_block":
-        content = _normalize_math_content((tok.content or "").strip("\n"))
+        raw = _normalize_math_content((tok.content or "").strip("\n"))
+        # Drop whitespace-only lines to avoid emitting blank lines inside \[...\]
+        # (blank lines in display math can trigger LaTeX errors)
+        lines = [ln.rstrip() for ln in raw.splitlines() if ln.strip() != ""]
+        content = "\n".join(lines)
         return "\\[\n" + content + "\n\\]\n"
 
     if tok.type == "code_inline":
@@ -722,6 +734,7 @@ def _render_node(node: Node, rules: Rules) -> str:
         section_cmd = rules.heading_levels.get(level, "section")
         tmpl = str(rule.get("template", r"\\{section_cmd}{content}\n"))
         content = "".join(_render_node(ch, rules) for ch in node.children)
+        content = content.replace("\\\\\n", " ")
         return _apply_template(tmpl, content=content, section_cmd=section_cmd)
 
     if tok.type == "link_open":
